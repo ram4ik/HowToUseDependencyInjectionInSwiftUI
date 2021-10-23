@@ -11,7 +11,7 @@ import SwiftUI
 struct HowToUseDependencyInjectionInSwiftUIApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(dataService: ProductionDataService(url: URL(string: "https://jsonplaceholder.typicode.com/posts")!))
         }
     }
 }

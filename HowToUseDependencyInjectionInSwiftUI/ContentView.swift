@@ -18,9 +18,11 @@ struct PostModel: Identifiable, Codable {
 
 class ProductionDataService {
     
-    static let instance = ProductionDataService()
+    let url: URL
     
-    let url: URL = URL(string: "https://jsonplaceholder.typicode.com/posts")!
+    init(url: URL) {
+        self.url = url
+    }
     
     func getData() -> AnyPublisher<[PostModel], Error> {
         URLSession.shared.dataTaskPublisher(for: url)
@@ -36,12 +38,15 @@ class DependencyInjectionViewModel: ObservableObject {
     @Published var dataArray: [PostModel] = []
     var cancellables = Set<AnyCancellable>()
     
-    init() {
+    let dataService: ProductionDataService
+    
+    init(dataService: ProductionDataService) {
+        self.dataService = dataService
         loadPosts()
     }
     
     private func loadPosts() {
-        ProductionDataService.instance.getData()
+        dataService.getData()
             .sink { _ in
                 
             } receiveValue: { [weak self] returnedPosts in
@@ -55,7 +60,11 @@ class DependencyInjectionViewModel: ObservableObject {
 
 struct ContentView: View {
     
-    @StateObject private var vm = DependencyInjectionViewModel()
+    @StateObject private var vm: DependencyInjectionViewModel
+    
+    init(dataService: ProductionDataService) {
+        _vm = StateObject(wrappedValue: DependencyInjectionViewModel(dataService: dataService))
+    }
     
     var body: some View {
         ScrollView {
@@ -69,7 +78,10 @@ struct ContentView: View {
 }
 
 struct ContentView_Previews: PreviewProvider {
+    
+    static let dataService = ProductionDataService(url: URL(string: "https://jsonplaceholder.typicode.com/posts")!)
+    
     static var previews: some View {
-        ContentView()
+        ContentView(dataService: dataService)
     }
 }
