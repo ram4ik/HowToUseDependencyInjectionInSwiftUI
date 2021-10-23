@@ -40,10 +40,14 @@ class ProductionDataService: DataServiceProtocol {
 
 class MockDataService: DataServiceProtocol {
     
-    let testData: [PostModel] = [
-        PostModel(userId: 1, id: 1, title: "One", body: "One"),
-        PostModel(userId: 2, id: 2, title: "Two", body: "Two"),
-    ]
+    let testData: [PostModel]
+    
+    init(data: [PostModel]?) {
+        self.testData = data ?? [
+            PostModel(userId: 1, id: 1, title: "One", body: "One"),
+            PostModel(userId: 2, id: 2, title: "Two", body: "Two"),
+        ]
+    }
     
     func getData() -> AnyPublisher<[PostModel], Error> {
         Just(testData)
@@ -99,13 +103,16 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     
+    static let mockDataService = MockDataService(data: nil)
+    static let someMockDataService = MockDataService(data: [PostModel(userId: 3, id: 3, title: "Mock Title", body: "Mock Body")])
+    
     static let dataService = ProductionDataService(url: URL(string: "https://jsonplaceholder.typicode.com/posts")!)
     
-    static let mockDataService = MockDataService()
-    
     static var previews: some View {
+        
         Group {
             ContentView(dataService: mockDataService)
+            ContentView(dataService: someMockDataService)
             
             ContentView(dataService: dataService)
         }
