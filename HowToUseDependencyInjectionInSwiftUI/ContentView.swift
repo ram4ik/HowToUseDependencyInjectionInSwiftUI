@@ -16,7 +16,12 @@ struct PostModel: Identifiable, Codable {
     let body: String
 }
 
-class ProductionDataService {
+protocol DataServiceProtocol {
+    
+    func getData() -> AnyPublisher<[PostModel], Error>
+}
+
+class ProductionDataService: DataServiceProtocol {
     
     let url: URL
     
@@ -33,14 +38,29 @@ class ProductionDataService {
     }
 }
 
+class MockDataService: DataServiceProtocol {
+    
+    let testData: [PostModel] = [
+        PostModel(userId: 1, id: 1, title: "One", body: "One"),
+        PostModel(userId: 2, id: 2, title: "Two", body: "Two"),
+    ]
+    
+    func getData() -> AnyPublisher<[PostModel], Error> {
+        Just(testData)
+            .tryMap({ $0 })
+            .eraseToAnyPublisher()
+    }
+    
+}
+
 class DependencyInjectionViewModel: ObservableObject {
     
     @Published var dataArray: [PostModel] = []
     var cancellables = Set<AnyCancellable>()
     
-    let dataService: ProductionDataService
+    let dataService: DataServiceProtocol
     
-    init(dataService: ProductionDataService) {
+    init(dataService: DataServiceProtocol) {
         self.dataService = dataService
         loadPosts()
     }
@@ -62,7 +82,7 @@ struct ContentView: View {
     
     @StateObject private var vm: DependencyInjectionViewModel
     
-    init(dataService: ProductionDataService) {
+    init(dataService: DataServiceProtocol) {
         _vm = StateObject(wrappedValue: DependencyInjectionViewModel(dataService: dataService))
     }
     
@@ -81,7 +101,13 @@ struct ContentView_Previews: PreviewProvider {
     
     static let dataService = ProductionDataService(url: URL(string: "https://jsonplaceholder.typicode.com/posts")!)
     
+    static let mockDataService = MockDataService()
+    
     static var previews: some View {
-        ContentView(dataService: dataService)
+        Group {
+            ContentView(dataService: mockDataService)
+            
+            ContentView(dataService: dataService)
+        }
     }
 }
